@@ -8,13 +8,13 @@ class portfolio():
   def __init__(self,holdings: dict, index: dict, buy_sell_signals: pd.DataFrame):
     ##
     #  Initializes a portfolio object with the following attributes:
-    #  holdings: dictionary containing {ticker:amount} pairs, where ticker is the stock ticker and amount is the number of shares held
-    #  index_per: dictionary containing {ticker:index_%} pairs, where index_% is the percentage of the index that the ticker represents
-    #  index_cw: dictionary containing {ticker:cap_weight} pairs, where cap_weight is the capitalization weight of the ticker within the portfolio's index
-    #  index: dictionary containing { 'index' : index_value}, where index_value is the total value of the portfolio's index
-    #  buy_sell: DataFrame containing buy/sell signals for each stock in the portfolio retrieved from model predictions
-    #  stats: dictionary containing portfolio statistics such as maximum drawdown, the corresponding recovery period, PnL, Win Loss Ratio, and possibly more to be added
     #
+    #  :param holdings: dictionary containing {ticker:amount} pairs, where ticker is the stock ticker and amount is the number of shares held
+    #  :param index_per: dictionary containing {ticker:index_%} pairs, where index_% is the percentage of the index that the ticker represents
+    #  :param index_cw: dictionary containing {ticker:cap_weight} pairs, where cap_weight is the capitalization weight of the ticker within the portfolio's index
+    #  :param index: dictionary containing { 'index' : index_value}, where index_value is the total value of the portfolio's index
+    #  :param buy_sell: DataFrame containing buy/sell signals for each stock in the portfolio retrieved from model predictions
+    #  :param stats: dictionary containing portfolio statistics such as maximum drawdown, the corresponding recovery period, PnL, Win Loss Ratio, and possibly more to be added
     ## 
     self.holdings = {} ## dict = {'ticker': amount}
     self.index_per = {} ## dict = {'ticker': index_%}
@@ -57,18 +57,14 @@ class portfolio():
     
     ## Pull prices for each ticker name and construct cap_weight, index, and index_% dictionaries
     ## Data pulled includes Open, High, Low, Close, Adj_close, Volume in df format
-
     for ticker in holdings.keys():
-      ## retrieve price data 
-        price = yf.download(ticker, start= time_range[0], end=time_range[1])
-        cap_weight = price * ticker.get(ticker) # calculate cap weight for each ticker, price of ticker * amount
-        index_cw.update({ticker: cap_weight}) # store cap_weight in dictionary for later use 
-        index.update( {"index": (cap_weight+index.get("index")) } ) # update index value for each cap_weight value
-
+        price = yf.download(ticker, start= time_range[0], end=time_range[1]) ## retrieve price data 
+        cap_weight = price * ticker.get(ticker) ## calculate cap weight for each ticker, price of ticker * amount
+        index_cw.update({ticker: cap_weight}) ## store cap_weight in dictionary for later use 
+        index.update( {"index": (cap_weight+index.get("index")) } ) ## update index value for each cap_weight value
+    ## Have to wait for index value to be finalized before calculating index_%
     for ticker in index_cw.keys():
-        ## divide each cap_weight by index value to get index_%
-        index_per.update( {ticker: (index_cw.get(ticker)*100/index.get("index")) } )
-    
+        index_per.update( {ticker: (index_cw.get(ticker)*100/index.get("index")) } ) ## divide each cap_weight by index value to get index_%
       
     pass
   
@@ -93,6 +89,7 @@ class portfolio():
       Updates the stats dictionary with new statistics
 
       '''
+    
       pass
 
   def run_monte_carlo(sim_length,portfolio): ## **IN PROGRESS**
