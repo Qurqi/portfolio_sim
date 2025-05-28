@@ -2,40 +2,50 @@ from typing import Dict
 import pandas as pd
 import yfinance as yf
 import numpy as np
+from datetime import datetime
+import time
 
 class portfolio:
-    def __init__(self, holdings: Dict, index: Dict, buy_sell_signals: pd.DataFrame):
-    ##
-    #  Initializes a portfolio object with the following attributes:
-    #
-    #  :param holdings: dictionary containing {ticker:amount} pairs, where ticker is the stock ticker and amount is the number of shares held
-    #  :param index_per: dictionary containing {ticker:index_%} pairs, where index_% is the percentage of the index that the ticker represents
-    #  :param index_cw: dictionary containing {ticker:cap_weight} pairs, where cap_weight is the capitalization weight of the ticker within the portfolio's index
-    #  :param index: dictionary containing { 'index' : index_value}, where index_value is the total value of the portfolio's index
-    #  :param buy_sell: DataFrame containing buy/sell signals for each stock in the portfolio retrieved from model predictions
-    #  :param stats: dictionary containing portfolio statistics such as maximum drawdown, the corresponding recovery period, PnL, Win Loss Ratio, and possibly more to be added
-    ## 
-    self.holdings = {} ## dict = {'ticker': amount}
-    self.index_per = {} ## dict = {'ticker': index_%}
-    self.index_cw = {} ## dict = {'ticker': cap_weight} 
-    self.index = {} ## dict = { 'index' : index_value}
-    self.buy_sell = buy_sell_signals
-    self.stats = {} ## dict = {'dd_max': 0, 'dd_rec': 0}
 
-    def add_stocks(self, amount, tickers: Dict = None):
-        '''
-        Adds "amount" shares of "ticker" to the portfolio's holdings dictionary
-
-        :param holdings: dictionary containing {ticker:amount} pairs
-        :param ticker: yfinance ticker symbol for desired stock
-        :param amount: number of "ticker" share to add to the portfolio
-        :param tickers: optional input dictionary containing a set of {ticker:amount} pairs for convenient portfolio initialization
-
-        '''
-        if tickers != None:
-            self.holdings.update(tickers)
+    def __init__(self,holdings: Dict,buy_sell_signals: pd.DataFrame):
+        ##
+        #  Initializes a portfolio object with the following attributes:
+        #
+        #  :param holdings: dictionary containing {ticker:{amount:date_range} } triplets, where ticker is the stock ticker and amount is the number of shares held, and date_range is the range of dates which we wnt to 
+        #  :param index_per: dictionary containing {ticker:index_%} pairs, where index_% is the percentage of the index that the ticker represents
+        #  :param index_cw: dictionary containing {ticker:cap_weight} pairs, where cap_weight is the capitalization weight of the ticker within the portfolio's index
+        #  :param index: dictionary containing { 'index' : index_value}, where index_value is the total value of the portfolio's index
+        #  :param buy_sell: DataFrame containing buy/sell signals for each stock in the portfolio retrieved from model predictions
+        #  :param stats: dictionary containing portfolio statistics such as maximum drawdown, the corresponding recovery period, PnL, Win Loss Ratio, and possibly more to be added
+        ## 
+        if holdings == None:
+            self.holdings = {} ## dict = {'ticker': {amount:date_range} } nested dictionaries with ticker amount and date_range groups
         else:
-            self.holdings.update({ticker: amount})
+            self.holdings = holdings
+
+        self.index_per = {} ## dict = {'ticker': index_%}
+        self.index_cw = {} ## dict = {'ticker': cap_weight} 
+        self.index = {'index':0.0} ## dict = { 'index' : index_value}
+        self.buy_sell = buy_sell_signals
+        self.stats = {} ## dict = {'dd_max': 0, 'dd_rec': 0, ...} stats for index
+        self.data = {} ## dict = {'ticker': DataFrame} where DataFrame contains stock data for ticker, including Open, High, Low, Close, Adj_close, Volume
+
+    def add_stocks(self, ticker, amount, tickers: Dict = None):
+           '''
+           Adds "amount" shares of "ticker" to the portfolio's holdings dictionary
+
+           :param holdings: dictionary containing {ticker:amount} pairs
+           :param ticker: yfinance ticker symbol for desired stock
+           :param amount: number of "ticker" share to add to the portfolio
+           :param tickers: optional input dictionary containing a set of {ticker:amount} pairs for convenient portfolio initialization
+
+           '''
+           if tickers != None:
+               self.holdings.update(tickers)
+           else:
+               self.holdings.update({ticker: amount})
+   
+
 
     def make_index(index,index_cw,index_per,holdings,time_range):
         '''
@@ -51,35 +61,26 @@ class portfolio:
         '''
 
         ## Pull prices for each ticker name and construct cap_weight, index, and index_% dictionaries
-        ## Data pulled includes Open, High, Low, Close, Adj_close, Volume in df format
-        for ticker in holdings.keys():
-            price = yf.download(ticker, start= time_range[0], end=time_range[1]) ## retrieve price data 
-            cap_weight = price * ticker.get(ticker) ## calculate cap weight for each ticker, price of ticker * amount
-            index_cw.update({ticker: cap_weight}) ## store cap_weight in dictionary for later use 
-            index.update( {"index": (cap_weight+index.get("index")) } ) ## update index value for each cap_weight value
-        ## Have to wait for index value to be finalized before calculating index_%
-        for ticker in index_cw.keys():
-            index_per.update( {ticker: (index_cw.get(ticker)*100/index.get("index")) } ) ## divide each cap_weight by index value to get index_%
-
+        ## Data pulled in df format
+       
 
     def update_holdings(self, update: Dict):
-        ''' 
-
-        Updates the holdings dictionary with ticker:amount pairs in update dictionary created by buy/sell signals dataframe
+        '''   
+        Updates the holdings dictionary with ticker:amount pairs in update dictionary 
 
         '''
-
         pass
 
     def update_index(self):
-      '''
-      Updates the index value and index info dictionaries with new values
+        '''
+        Updates the index value and index info dictionaries with new values 
 
-      '''
-      pass
+        '''  
+        pass
 
     def update_stats(self):
-      '''
-      Updates the stats dictionary with new statistics
+        '''
+        Updates the stats dictionary with new statistics 
 
-      '''
+        '''
+        pass
