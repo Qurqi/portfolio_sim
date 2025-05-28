@@ -1,5 +1,6 @@
 # portfolio_sim
 - Built to work with BacktestingFramework Class:
+  
 -This simulated portfolio class will pass an index of the constructed portfolio to the Backtesting framework to Backtest and update the portfolio holdings according to B/S signals 
 -The Backtesting framework will then return buy/sell signals for the portfolio to apply.
 
