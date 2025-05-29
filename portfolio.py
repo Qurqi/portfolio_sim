@@ -25,7 +25,6 @@ class portfolio:
         self.index = pd.DataFrame(columns = ['index']) ## DataFrame to hold the index of the portfolio
         self.index_cw = pd.DataFrame(columns=['index_cw']) ## dict = {'ticker': index_%}
         self.buy_sell = buy_sell_signals
-        self.stats = pd.DataFrame(columns=['dd_max','dd_rec'])
         self.data = pd.DataFrame()
 
     def add_stocks(self, ticker, amount, tickers: Dict = None):
