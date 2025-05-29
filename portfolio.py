@@ -44,16 +44,29 @@ class portfolio:
     def make_index(self,time_range):
         '''
         Constructs a capitalization weighted index using the tickers and amounts in holdings with yfinance data
-
-        :param index: dictionary containing { 'index' : index_value}
-        :param index_cw: dictionary containing {ticker:cap_weight} pairs
-        :param index_per: dictionary containing {ticker:index_%} pairs
-        :param holdings: dictionary containing {ticker:amount} pairs
-        :param time_range: 2 entry list containing [start_date, end_date] of stock data to use in index. 
-                           start date and end_date must be in the format 'YYYY-MM-DD'
+        :param time_range: list containing the start and end dates for the index data in the format [start_date, end_date]
 
         '''
-        pass
+
+        ## Pull prices for each ticker name and construct cap_weight, index, and index_% dictionaries
+        ## Data pulled in df format
+
+   
+        for ticker in self.holdings.keys():
+            price = yf.download(ticker, start= time_range[0], end=time_range[1]) ## retrieve price data 
+            price = price['Close'].rename({'Close':ticker}) ## rename the column to the ticker name
+            cap_weight = price[ticker].mul(self.holdings.get(ticker)) ## calculate cap weight for the ticker, price of ticker * amount
+            cap_weight = cap_weight.rename({ticker: 'index'})
+            if self.data.empty: ## if data DataFrame is empty, initialize it with the ticker and price
+                self.data = pd.DataFrame(price)
+            else:
+                self.data.insert(self.data.shape[1],ticker,price[ticker]) ## add the price data to the data DataFrame
+
+            if self.index.empty: ## add cap_weight to index DataFrame
+                self.index = cap_weight
+            else:
+                self.index = self.index.add(cap_weight)
+        
 
 
     def update_holdings(self, update: Dict):
