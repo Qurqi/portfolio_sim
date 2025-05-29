@@ -19,7 +19,7 @@ class portfolio:
         #  :param stats: dictionary containing portfolio statistics such as maximum drawdown, the corresponding recovery period, PnL, Win Loss Ratio, and possibly more to be added
         ## 
         if holdings == None:
-            self.holdings = pd.DataFrame(columns=['ticker', 'amount']) ## DataFrame to hold the holdings of the portfolio
+            self.holdings = pd.DataFrame(columns=['ticker', 'amount','dd_max','dd_rec']) ## DataFrame to hold the holdings of the portfolio
         else:
             self.holdings = holdings
         self.index = pd.DataFrame(columns = ['index']) ## DataFrame to hold the index of the portfolio
