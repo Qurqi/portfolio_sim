@@ -80,10 +80,23 @@ class portfolio:
 
     def update_index(self):
         '''
-        Updates the index value and index info dictionaries with new values 
+        Updates the index value
 
         '''  
-        pass
+        # given new holdings, update the index value by recalculating the capitalization weighted index
+        
+        #clear index DataFrame
+        self.index = pd.DataFrame(columns=['index'])
+        # Recalculate the index with the current holdings using the existing data
+        for ticker in self.holdings.keys():
+            price = self.data[ticker]
+            cap_weight = price.mul(self.holdings.get(ticker))
+            cap_weight = cap_weight.rename({ticker: 'index'})
+            if self.index.empty:
+                self.index = cap_weight
+            else:
+                self.index = self.index.add(cap_weight)
+    
 
     def update_stats(self):
         '''
