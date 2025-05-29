@@ -1,21 +1,21 @@
+import pandas as pd
 
-def drawdown_analysis(stats,index):
+def drawdown_analysis_index(self):
     '''
     Performs Drawdown Analysis to evaluate peak-to-trough declines in the portfolio.
     :param stats: Dictionary, containing the portfolio's maximum drawdown and corresponding recovery period, to be updated
     :param index: dict with Dataframe containing the index value at each time period.
     :return: updated 'stats' dict
     '''
-    ## add statistics to stats dictionary if not present
-    if 'dd_max' not in stats.keys():
-      stats.update({'dd_max': 0})
-    if 'dd_rec' not in stats.keys():
-      stats.update({'dd_rec': 0})
+    ## verify dd_max and dd_rec are not NaN
+    if self.stats.empty:
+        self.stats = pd.DataFrame(index = ['dd_max', 'dd_rec'], columns = self.holdings.keys())
+        self.stats.fillna(0, inplace=True)
     ## store index[0] as intial base value
-    peak = index.get(index[0]) #store index value 0
+    peak = self.index.iat[0,0] #store index value 0
     i_peak = 0
     
-    for i in range(1,len(index)):
+    for i in range(1,self.index.shape[0]):
       
       ## Check for recovery time and calculate drawdown if so. Check all Positive slope line points 
       #  to see if they are greater than the peak as this is where the recovery happens.
@@ -37,14 +37,14 @@ def drawdown_analysis(stats,index):
       #       is dd > dd_max?
       #         if so, store this value as dd_max
       ##
-      if (index.get(index[i-1]) < index.get(index[i])) and (index.get(index[i+1]) > index.get(index[i])):
-        if index.get(index[i]) > peak:
-          trough = min(index.get(index[i_peak:i]))
+      if (self.index.iat[i-1,0] < self.index.iat[i,0]) and (self.index.iat[i+1,0] > self.index.iat[i,0]):
+        if self.index.iat[i,0] > peak:
+          trough = min(self.index.iat[i,0], self.index.iat[i_peak,0])  # Find the minimum value between peak and current index
           dd = (peak - trough)*100/peak
-          if dd > stats.get('dd_max'):
+          if dd > self.stats.at('dd_max','index'):
             dd_rec = i - i_peak
-            stats.update({'dd_max' : dd})
-            stats.update({'dd_rec' : dd_rec})
+            self.stats.at('dd_rec','index') = dd_rec
+            self.stats.at('dd_max','index') = dd
           
       ## Find local max. Find all points with negative concavity and check their relative heights
       #  
@@ -53,9 +53,9 @@ def drawdown_analysis(stats,index):
       #       if so, store this value as a peak and store i value(i_peak)
       #       set peak = index.get(index[i])
       ##
-      if (index.get(index[i-1]) < index.get(index[i])) and (index.get(index[i+1]) < index.get(index[i])):
-        if index.get(index[i]) > peak:
-          peak = index.get(index[i])
+      if self.index.iat[i-1,0] < self.index.iat[i,0]) and (self.index.iat[i+1,0] < self.index.iat[i,0]):
+        if self.index.iat[i,0] > peak:
+          peak = self.index.iat[i,0]
           i_peak = i
 
 def win_loss_ratio(self, buy_sell):
