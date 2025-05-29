@@ -1,17 +1,17 @@
 import pandas as pd
 
-def drawdown_analysis_index(self):
+def drawdown_analysis(self):
     '''
-    Performs Drawdown Analysis to evaluate peak-to-trough declines in the portfolio.
-    :param stats: Dictionary, containing the portfolio's maximum drawdown and corresponding recovery period, to be updated
-    :param index: dict with Dataframe containing the index value at each time period.
-    :return: updated 'stats' dict
+    Performs Drawdown Analysis to evaluate peak-to-trough declines in the portfolio for the index and all individual stocks and update stats dataframe
+    :param stats: Dataframe, containing the portfolio's maximum drawdown and corresponding recovery period, to be updated
+    :param index: Dataframe containing the index value at each time period.
     '''
     ## verify dd_max and dd_rec are not NaN
     if self.stats.empty:
-        self.stats = pd.DataFrame(index = ['dd_max', 'dd_rec'], columns = self.holdings.keys())
+        self.stats = pd.DataFrame(index = ['dd_max', 'dd_rec'], columns = (self.holdings.keys(),'index'))
         self.stats.fillna(0, inplace=True)
     ## store index[0] as intial base value
+        
     peak = self.index.iat[0,0] #store index value 0
     i_peak = 0
     
@@ -19,24 +19,6 @@ def drawdown_analysis_index(self):
       
       ## Check for recovery time and calculate drawdown if so. Check all Positive slope line points 
       #  to see if they are greater than the peak as this is where the recovery happens.
-      # 
-      #   is (in[i-1] < in[i]) and (in[i+1] > in[i])? 
-      #     is index.get(index[i]) > peak?
-      #     
-      #       if so, i - i_peak = dd_rec
-      #   
-      #       Compute Drawdown
-      #   
-      #       Find minumum index value between i_peak and i
-      #       create sub data frame with index values between i_peak and i
-      #       find min value in sub data frame
-      #       set trough = min value
-      #   
-      #       dd = (peak - trough)*100/peak
-      #   
-      #       is dd > dd_max?
-      #         if so, store this value as dd_max
-      ##
       if (self.index.iat[i-1,0] < self.index.iat[i,0]) and (self.index.iat[i+1,0] > self.index.iat[i,0]):
         if self.index.iat[i,0] > peak:
           trough = min(self.index.iat[i,0], self.index.iat[i_peak,0])  # Find the minimum value between peak and current index
@@ -47,16 +29,30 @@ def drawdown_analysis_index(self):
             self.stats.at('dd_max','index') = dd
           
       ## Find local max. Find all points with negative concavity and check their relative heights
-      #  
-      #  is (in[i-1] < in[i]) and (in[i+1] < in[i])?
-      #    is index.get(index[i]) > peak?
-      #       if so, store this value as a peak and store i value(i_peak)
-      #       set peak = index.get(index[i])
-      ##
       if self.index.iat[i-1,0] < self.index.iat[i,0]) and (self.index.iat[i+1,0] < self.index.iat[i,0]):
         if self.index.iat[i,0] > peak:
           peak = self.index.iat[i,0]
           i_peak = i
+
+      for ticker in self.stats.columns:
+        peak = self.data[ticker].iat[0,0] #store index value 0
+        i_peak = 0
+    
+        for i in range(1,self.data[ticker].shape[0]):
+
+          if (self.data[ticker].iat[i-1,0] < self.data[ticker].iat[i,0]) and (self.data[ticker].iat[i+1,0] > self.data[ticker].iat[i,0]):
+            if self.data[ticker].iat[i,0] > peak:
+              trough = min(self.data[ticker].iat[i,0], self.data[ticker].iat[i_peak,0])  # Find the minimum value between peak and current index
+              dd = (peak - trough)*100/peak
+              if dd > self.stats.at('dd_max',ticker):
+                dd_rec = i - i_peak
+                self.stats.at('dd_rec',ticker) = dd_rec
+                self.stats.at('dd_max',ticker) = dd
+
+          if self.data[ticker].iat[i-1,0] < self.data[ticker].iat[i,0]) and (self.data[ticker].iat[i+1,0] < self.data[ticker].iat[i,0]):
+            if self.data[ticker].iat[i,0] > peak:
+              peak = self.data[ticker].iat[i,0]
+              i_peak = i
 
 def win_loss_ratio(self, buy_sell):
     '''
