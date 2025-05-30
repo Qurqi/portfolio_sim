@@ -4,6 +4,7 @@ import yfinance as yf
 import numpy as np
 from datetime import datetime
 import time
+import pickle 
 
 class portfolio:
 
@@ -104,3 +105,23 @@ class portfolio:
 
         '''
         pass
+
+
+    def save_to_file(self, filename: str):
+        """
+        Saves the current portfolio instance to a local file using pickle.
+        :param filename: Path to the file to save the portfolio.
+        """
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
+
+    @staticmethod
+    def load_from_file(filename: str):
+        """
+        Loads a portfolio instance from a local file.
+        :param filename: Path to the file containing the saved portfolio.
+        :return: portfolio instance
+        """
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
+
