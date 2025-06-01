@@ -3,6 +3,7 @@ import pandas as pd
 import yfinance as yf
 import numpy as np
 from datetime import datetime
+from stats import drawdown_analysis, win_loss_ratio, calculate_PnL
 import time
 import pickle 
 
@@ -13,6 +14,8 @@ class portfolio:
         #  Initializes a portfolio object with the following attributes:
         #
         #  :param holdings: Dataframe storing the amount of a ticker held at each time instance. The ticker name is the column name, the date is the index, amount is the entry
+        #  :param buy_sell: DataFrame containing B/S signals for each stock in the portfolio retrieved from the BackTesting Framework. 
+        #                   Signals are formatted  as such: {'Date': [date],'Action': [signal],'Quantity': [quantity],'Price': [current_pred],'Ticker' : [ticker]}. NOTE: if sell, quantity is already negative.
         #  :param data: Dataframe containing a cap weighted index in the first column, and the closing price data for each stock held in the remaining columns. 'index' initialized to zero
         #  :param stats: DataFrame containing portfolio statistics such as maximum drawdown(dd_max), the corresponding recovery period(dd_rec), PnL, and Win Loss Ratio of each stock in the portfolio. Stat names are the indexes and ticker names are the column names
         #  :param date_range: date range of all holdings data
@@ -25,7 +28,7 @@ class portfolio:
         else:
             self.date_range = pd.date_range(start=time_range[0], end=time_range[1]) ## create date range for the portfolio based on the time_range input
         self.data = pd.DataFrame(0,columns = ['index'],index = self.date_range) # df of stock data. the first row contains an index of all stocks held. Index initialized to Zero
-        self.stats = pd.DataFrame(0,columns = ['index'],index = ['dd_max', 'dd_rec', 'PnL', 'win_loss_ratio']) # append more stats as we add them. ticker names are columns and indexes are corresponding stat.    
+        self.stats = pd.DataFrame() # append stats as we add them. ticker names are columns and indexes are corresponding stat.    
 
         if holdings is None: # Require user to input stocks and amounts
             self.holdings = pd.DataFrame(index=self.date_range)  # Initialize holdings DataFrame with zeros
@@ -110,15 +113,13 @@ class portfolio:
             self.update_stats()
             self.apply_signals(BS_signals)  
         elif update is None and BS_signals is not None:
-            print("Applying buy/sell signals to the portfolio")
             self.apply_signals(BS_signals)  # If BS_signals is provided, apply the signals to the portfolio
         elif update is not None and BS_signals is None:
             self.update_holdings(update)
             self.update_index()
             self.update_stats()
-         
 
-    def update_holdings(self, update: Dict): ## define updated portfolio holdings with a Dictionary of ticker:amount pairs
+    def update_holdings(self, update: Dict): 
         '''   
         Updates the holdings dictionary with ticker:amount pairs in update dictionary 
 
@@ -173,7 +174,14 @@ class portfolio:
         Updates the stats dictionary with new statistics 
 
         '''
-
+        if self.stats.empty:  # If the stats DataFrame is empty, initialize it with the correct columns
+            cols = ['index'] + list(self.holdings.columns)
+            self.stats = pd.DataFrame(columns=cols)
+            self.stats.fillna(0, inplace=True)
+        
+        drawdown_analysis(self)  # Perform drawdown analysis to update the stats DataFrame
+        win_loss_ratio(self)  # Calculate the win/loss ratio and update the stats DataFrame
+        
         pass
 
     def save_to_file(self, filename: str):
