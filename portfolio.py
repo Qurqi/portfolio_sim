@@ -13,8 +13,6 @@ class portfolio:
         #  Initializes a portfolio object with the following attributes:
         #
         #  :param holdings: Dataframe storing the amount of a ticker held at each time instance. The ticker name is the column name, the date is the index, amount is the entry
-        #  :param buy_sell: DataFrame containing B/S signals for each stock in the portfolio retrieved from the BackTesting Framework. 
-        #                   Signals are formatted  as such: {'Date': [date],'Action': [signal],'Quantity': [quantity],'Price': [current_pred],'Ticker' : [ticker]}
         #  :param data: Dataframe containing a cap weighted index in the first column, and the closing price data for each stock held in the remaining columns. 'index' initialized to zero
         #  :param stats: DataFrame containing portfolio statistics such as maximum drawdown(dd_max), the corresponding recovery period(dd_rec), PnL, and Win Loss Ratio of each stock in the portfolio. Stat names are the indexes and ticker names are the column names
         #  :param date_range: date range of all holdings data
@@ -41,17 +39,40 @@ class portfolio:
         :param BS_signals: DataFrame containing B/S signals for each stock in the portfolio retrieved from the BackTesting Framework. 
                            Signals are formatted  as such: {'Date': [date],'Action': [signal],'Quantity': [quantity],'Price': [current_pred],'Ticker' : [ticker]}
         '''
-        ## convert BS_signals to a dictionary of ticker:amount pairs
-        update = self.convert_signals()
-        self.update_portfolio(update)
+        # Make a DF with tickers as columns, indexed over the date range of the portfolio
+        # Fill in the df with signals.
+        signals = self.convert_signals(BS_signals)  # Convert the buy/sell signals DataFrame into a signals DataFrame with tickers as columns, indexed over the date range of the portfolio
+        print("Signals", signals)
+        print("Holdings before applying signals", self.holdings)
+        # add the signals to the holdings DataFrame, indexed over the date range of the portfolio
+        self.holdings = self.holdings.add(signals, fill_value=0)
+        print("Holdings after applying signals", self.holdings)
+        # update index value with the new holdings DataFrame
+        self.update_index()
 
-
-    def convert_signals(self):
+    def convert_signals(self,BS_signals: pd.DataFrame):
         '''
-        converts the buy_sell_signals DataFrame into a dictionary of ticker:amount pairs, where amount is the number of stocks the portolio shoud hold
+        converts the buy_sell_signals DataFrame into a df of signals.
         
         '''
-           
+        # Make a signal Dataframe with tickers as columns, indexed over the date range of the portfolio
+        signals = pd.DataFrame(0, columns = self.holdings.columns,index=self.date_range)  # Initialize signals DataFrame with zeros
+
+        # at index date,ticker, if the action is buy or sell, add the quantity to the signals DataFrame
+        for i in range(BS_signals.shape[0]):
+            date = BS_signals.at[i, 'Date']
+            ticker = BS_signals.at[i, 'Ticker']
+            action = BS_signals.at[i, 'Action']
+            quantity = BS_signals.at[i, 'Quantity']
+            if action == 'buy' or action == 'sell': ## update quantity at date and all future dates
+                # create a column vector of length date, self.date_range[-1] with the quantity to be added
+                quantity_vector = pd.Series(quantity, index=self.date_range[self.date_range.get_loc(date):])
+                #replace the quantity at the date and all future dates with the quantity vector
+                signals[ticker] = signals[ticker].add(quantity_vector, fill_value=0)
+            elif action == 'hold':
+                pass
+        return signals  # Return the signals DataFrame with the buy/sell signals applied
+        
     def get_data(self,ticker: str):
         '''
         Initializes the portfolio's holdings data Dataframe from yfinance 
@@ -61,7 +82,7 @@ class portfolio:
         price = yf.download(ticker, start= self.date_range[0], end=self.date_range[-1]) ## retrieve price data  
         tick_data = (price['Close'][ticker]).rename(ticker)  # Get the closing prices for the ticker
         self.data = pd.concat([self.data, tick_data], axis=1, join = 'inner')  # Insert the stock price into the DataFrame. Not that the inner merge will filter out non-trading days in date_range
-    
+
     def update_data(self):
         '''
         Adjust data DataFrame to remove any ticker data for tickers that are no longer in the holdings DataFrame, and add any which are new.
@@ -84,24 +105,18 @@ class portfolio:
             exception = ValueError("You must provide either a dictionary of holding:amount pairs defining your portfolio's holdings or a DataFrame of buy/sell signals to update the portfolio")
             raise exception
         elif update is not None and BS_signals is not None: # User can do both actions in the order: Initialize holdings and then apply signals.
-            print("Updating portfolio with holdings and then applying buy/sell signals")
             self.update_holdings(update)
             self.update_index()
             self.update_stats()
             self.apply_signals(BS_signals)  
-            print("Here is a plot of your portfolio over time")
-            self.plot_index()  # Plot the index after applying the signals
         elif update is None and BS_signals is not None:
             print("Applying buy/sell signals to the portfolio")
             self.apply_signals(BS_signals)  # If BS_signals is provided, apply the signals to the portfolio
-            print("Here is a plot of your portfolio over time")
-            self.plot_index()  # Plot the index after applying the signals
         elif update is not None and BS_signals is None:
             self.update_holdings(update)
             self.update_index()
             self.update_stats()
-            print("Here is a plot of your portfolio over time")
-            self.plot_index()  # Plot the index after updating the holdings
+         
 
     def update_holdings(self, update: Dict): ## define updated portfolio holdings with a Dictionary of ticker:amount pairs
         '''   
@@ -138,7 +153,7 @@ class portfolio:
             price = self.data[ticker]
             cap_weight = price.mul(self.holdings[ticker])
             self.data['index'] = self.data['index'].add(cap_weight)
-    
+
     def plot_index(self):
         '''
         Plots the index value over time
@@ -178,4 +193,3 @@ class portfolio:
         """
         with open(filename, 'rb') as f:
             return pickle.load(f)
-
