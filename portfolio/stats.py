@@ -1,6 +1,9 @@
 
 import pandas as pd
 import portfolio.portfolio as pf
+import numpy as np
+import scipy.stats as stats
+
 
 def drawdown_analysis(self):
     '''
@@ -65,3 +68,36 @@ def calculate_PnL(self):
       self.stats.loc['win_loss_ratio'] = 0.0  # Initialize the win_loss_ratio row with zeros for all tickers
       
     pass
+
+
+def check_seasonality(self):
+    '''
+    Check if the time series data is seasonal using the autocorrelation function (ACF).
+    :return: bool: True if the time series is seasonal, False otherwise.
+    '''
+    # Calculate the autocorrelation of the index
+    acf = stats.pearsonr(self.data['index'], self.data['index'].shift(1))[0]
+    
+    # Check if the ACF is significantly different from zero
+    if abs(acf) > 0.5:
+        return True  # Time series is seasonal
+    else:
+        return False  # Time series is not seasonal
+
+
+def check_stationarity(self):
+    '''
+    Check if the time series data is stationary using the Augmented Dickey-Fuller test.
+    :return: bool: True if the time series is stationary, False otherwise.
+    '''
+    # Perform the Augmented Dickey-Fuller test
+    result = stats.adfuller(self.data['index'])
+    
+    # Check the p-value
+    if result[1] < 0.05:
+        return True  # Time series is stationary
+    else:
+        return False  # Time series is not stationary
+    
+def 
+
