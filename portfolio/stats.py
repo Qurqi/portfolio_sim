@@ -69,22 +69,6 @@ def calculate_PnL(self):
       
     pass
 
-
-def check_seasonality(self):
-    '''
-    Check if the time series data is seasonal using the autocorrelation function (ACF).
-    :return: bool: True if the time series is seasonal, False otherwise.
-    '''
-    # Calculate the autocorrelation of the index
-    acf = stats.pearsonr(self.data['index'], self.data['index'].shift(1))[0]
-    
-    # Check if the ACF is significantly different from zero
-    if abs(acf) > 0.5:
-        return True  # Time series is seasonal
-    else:
-        return False  # Time series is not seasonal
-
-
 def check_stationarity(self):
     '''
     Check if the time series data is stationary using the Augmented Dickey-Fuller test.
