@@ -28,6 +28,7 @@ class portfolio:
         else:
             self.date_range = pd.date_range(start=time_range[0], end=time_range[1]) ## create date range for the portfolio based on the time_range input
         self.data = pd.DataFrame(0,columns = ['index'],index = self.date_range) # df of stock data. the first row contains an index of all stocks held. Index initialized to Zero
+        self.station = pd.DataFrame(0,columns = ['index'], index = self.date_range)
         self.stats = pd.DataFrame() # append stats as we add them. ticker names are columns and indexes are corresponding stat.    
 
         if holdings is None: # Require user to input stocks and amounts
